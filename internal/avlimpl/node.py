@@ -37,3 +37,11 @@ class Node:
         self.balance_factor = self.left_height - self.right_height
         return self.balance_factor
 
+    def get_degree(self) -> int:
+        degree = 0
+        if self.left is not None:
+            degree += 1
+        if self.right is not None:
+            degree += 1
+        return degree
+

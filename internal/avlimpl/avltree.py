@@ -31,8 +31,7 @@ class AvlTree:
                 root.left_height = root.left.height + 1
                 root.height = max(root.left_height, root.right_height)
                 bf = root.compute_balance_factor()
-                # TODO: replace this with a balance factor check
-                if bf < -1 or bf > 1:
+                if self.is_imbalanced(root):
                     # balance the tree
                     self.__balance(root)
 
@@ -48,8 +47,7 @@ class AvlTree:
                 root.right_height = root.right.height + 1
                 root.height = max(root.left_height, root.right_height)
                 bf = root.compute_balance_factor()
-                #TODO: replace this with a balance factor check
-                if bf < -1 or bf > 1:
+                if self.is_imbalanced(root):
                     # balance the tree
                     self.__balance(root)
 
@@ -167,11 +165,27 @@ class AvlTree:
             return False
         # if it is, we check if it is a leaf, a degree one node or a degree 2 node
         # call the helper function
-        degree = self.root.get_degree()
-
+        degree = self.degree(node_to_delete)
+        parent = None
         if degree == 0:
             parent = self.__delete_leaf(node_to_delete)
-            self.__delete_balance_helper(parent)
+
+        elif degree == 1:
+            # we delete the node and the child of the node being deleted is attached to the parent
+            # then we recompute the balance factor for the parent and balance if needed
+            parent = self.__delete_degree_one_helper(node_to_delete)
+
+        # balancing the resulting tree after node deletion
+        if parent is not None:
+            while parent is not None:
+                parent.compute_balance_factor()
+                if self.is_imbalanced(parent):
+                    self.__delete_balance_helper(parent)
+                parent = parent.parent
+            # parent.compute_balance_factor()
+            # while self.is_imbalanced(parent):
+            #     self.__delete_balance_helper(parent)
+            #     parent = parent.parent
 
         return True
 
@@ -186,6 +200,13 @@ class AvlTree:
                 else:
                     self.__right_rotate(root.left)
                     self.__left_rotate(root)
+            else:
+                if root.left.balance_factor > 0:
+                    # LL rotation
+                    self.__right_rotate(root)
+                else:
+                    self.__left_rotate(root.left)
+                    self.__right_rotate(root)
 
     # returns parent of the deleted node
     def __delete_leaf(self, root: Node) -> Node | None:
@@ -198,7 +219,34 @@ class AvlTree:
                 root.parent.left = None
             else:
                 root.parent.right = None
-            return root.parent
+            parent = root.parent
+            root.parent = None
+            return parent
+
+    def __delete_degree_one_helper(self, node) -> Node | None:
+        node_parent = node.parent
+        # checking if the deleted node has a left child or right child and setting it accordingly
+        node_child = node.left if node.left is not None else node.right
+        if node_parent is not None:
+            # checking if the node being deleted is the left child or not
+            is_left_child = node.parent.left == node
+            if is_left_child:
+                # setting the left child of the parent to be the deleted node's only child
+                node_parent.left = node_child
+            else:
+                # setting the right child of the parent to be the deleted node's only child
+                node_parent.right = node_child
+        else:
+            # if the node being deleted is the root and is degree one
+            # then we set the root of the avl tree itself to be the child
+            self.root = node_child
+
+        # setting the new child's parent to be the parent of the deleted node
+        node_child.parent = node_parent
+        # unlinking the deleted node from the tree
+        node.parent = None
+        return node_parent
+
     def search_key(self, key: int) -> Node | None:
         return self.__search_helper(self.root, key)
 
