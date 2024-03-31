@@ -88,7 +88,6 @@ class AvlTree:
         # we first check if the height of left subtree > height of right subtree
         # or vice versa
         # then we appropriately check which case of imbalance it is
-        # TODO:write out the balance factor check into a different function
         if bf < -1:
             # balance factor < -1 means the tree is either RR or RL case
             if root.right.balance_factor < 0:
@@ -158,16 +157,56 @@ class AvlTree:
     # at this point just checks if the values match and deletes the node from the tree
     def delete_node(self, value_to_be_deleted: int) -> bool:
         print("Have to delete node with value: " + str(value_to_be_deleted))
+        # we check if tree has any nodes
+        if self.root is None:
+            return False
+        # we check if the node being deleted is present in the tree
+        # if it is not, then we return False or an error
+        node_to_delete = self.search_key(value_to_be_deleted)
+        if node_to_delete is None:
+            return False
+        # if it is, we check if it is a leaf, a degree one node or a degree 2 node
+        # call the helper function
+        degree = self.root.get_degree()
+
+        if degree == 0:
+            parent = self.__delete_leaf(node_to_delete)
+            self.__delete_balance_helper(parent)
+
         return True
 
-    def search_key(self, key: int) -> bool:
+    # TODO: complete helper function for deletion and balancing of nodes
+    def __delete_balance_helper(self, root: Node):
+        bf = root.compute_balance_factor()
+        if self.is_imbalanced(root):
+            if bf < -1:
+                if root.right.balance_factor < 0:
+                    # RR rotation
+                    self.__left_rotate(root)
+                else:
+                    self.__right_rotate(root.left)
+                    self.__left_rotate(root)
+
+    # returns parent of the deleted node
+    def __delete_leaf(self, root: Node) -> Node | None:
+        if root.parent is None:
+            self.root = None
+            return root.parent
+        else:
+            is_left_child = root.parent.left == root
+            if is_left_child:
+                root.parent.left = None
+            else:
+                root.parent.right = None
+            return root.parent
+    def search_key(self, key: int) -> Node | None:
         return self.__search_helper(self.root, key)
 
-    def __search_helper(self, root: Node, key: int) -> bool:
+    def __search_helper(self, root: Node, key: int) -> Node | None:
         if root is None:
-            return False
+            return root
         if root.val == key:
-            return True
+            return root
         elif root.val > key:
             return self.__search_helper(root.left, key)
         else:
@@ -181,4 +220,19 @@ class AvlTree:
         while inorder_successor.left is not None:
             inorder_successor = inorder_successor.left
         return inorder_successor
+
+    @staticmethod
+    def is_imbalanced(root: Node) -> bool:
+        return root.balance_factor < -1 or root.balance_factor > 1
+
+    @staticmethod
+    def degree(root: Node) -> int:
+        if root is None:
+            return 0
+        if root.left is None and root.right is None:
+            return 0
+        if (root.left is None and root.right is not None) or (root.left is not None and root.right is None):
+            return 1
+        else:
+            return 2
 
