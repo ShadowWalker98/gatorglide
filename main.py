@@ -38,5 +38,22 @@ def degree_two_deletion():
 
 
 if __name__ == "__main__":
-    print("Welcome to Gator Glide services!")
+
+    avl_tree = AvlTree()
+    avl_tree.insert(1)
+    avl_tree.insert(2)
+    avl_tree.insert(3)
+    avl_tree.insert(4)
+    avl_tree.insert(5)
+    avl_tree.insert(6)
+    avl_tree.insert(7)
+    avl_tree.insert(8)
+    avl_tree.insert(9)
+    avl_tree.insert(10)
+    avl_tree.insert(11)
+    avl_tree.insert(12)
+    avl_tree.delete_node(10)
+    avl_tree.delete_node(11)
+    avl_tree.delete_node(12)
+    avl_tree.inorder()
 

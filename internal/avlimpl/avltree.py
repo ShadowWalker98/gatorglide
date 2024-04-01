@@ -165,7 +165,7 @@ class AvlTree:
             return False
         # if it is, we check if it is a leaf, a degree one node or a degree 2 node
         # call the helper function
-        degree = self.degree(node_to_delete)
+        degree = node_to_delete.get_degree()
         parent = None
         if degree == 0:
             parent = self.__delete_leaf(node_to_delete)
@@ -195,17 +195,27 @@ class AvlTree:
     def __delete_balance_helper(self, root: Node):
         bf = root.compute_balance_factor()
         if self.is_imbalanced(root):
+            # L Rotation
             if bf < -1:
-                if root.right.balance_factor < 0:
-                    # RR rotation
+                # L0 rotation
+                if root.right.balance_factor == 0:
                     self.__left_rotate(root)
+                # L-1 rotation
+                elif root.right.balance_factor < 0:
+                    self.__left_rotate(root)
+                # L1 rotation
                 else:
-                    self.__right_rotate(root.left)
+                    self.__right_rotate(root.right)
                     self.__left_rotate(root)
-            else:
-                if root.left.balance_factor > 0:
-                    # LL rotation
+            # R Rotation
+            elif bf > 1:
+                # RO rotation
+                if root.left.balance_factor == 0:
                     self.__right_rotate(root)
+                # R1 rotation
+                elif root.left.balance_factor > 0:
+                    self.__right_rotate(root)
+                # R-1 rotation
                 else:
                     self.__left_rotate(root.left)
                     self.__right_rotate(root)
