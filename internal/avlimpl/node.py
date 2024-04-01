@@ -25,7 +25,8 @@ class Node:
         self.right = right_root
 
     def get_height(self):
-        return max(self.left_height, self.right_height) + 1
+        self.height = max(self.left_height, self.right_height) + 1
+        return self.height
 
     def compute_balance_factor(self) -> int:
         self.left_height = 0

@@ -174,7 +174,15 @@ class AvlTree:
             # we delete the node and the child of the node being deleted is attached to the parent
             # then we recompute the balance factor for the parent and balance if needed
             parent = self.__delete_degree_one_helper(node_to_delete)
-
+        else:
+            # find the inorder successor then replace the node with it
+            # then the node which is physically deleted is the inorder successor
+            # and is always a degree one or degree zero node
+            inorder_successor = self.__find_inorder_successor(node_to_delete)
+            # swap the values and then physically delete the node at the inorder_successor
+            temp = inorder_successor.val
+            self.delete_node(temp)
+            node_to_delete.val = temp
         # balancing the resulting tree after node deletion
         if parent is not None:
             while parent is not None:
@@ -182,14 +190,8 @@ class AvlTree:
                 if self.is_imbalanced(parent):
                     self.__delete_balance_helper(parent)
                 parent = parent.parent
-            # parent.compute_balance_factor()
-            # while self.is_imbalanced(parent):
-            #     self.__delete_balance_helper(parent)
-            #     parent = parent.parent
-
         return True
 
-    # TODO: complete helper function for deletion and balancing of nodes
     def __delete_balance_helper(self, root: Node):
         bf = root.compute_balance_factor()
         if self.is_imbalanced(root):
