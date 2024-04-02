@@ -80,7 +80,7 @@ if __name__ == "__main__":
     order10 = Order(1002, 1, 500, 4, 10)
     order11 = Order(1002, 1, 500, 4, 11)
     order12 = Order(1002, 1, 500, 4, 12)
-
+    # driver code for ETA tree testing
     avl_tree = AvlTree(BRANCH_EST_TOA)
     avl_tree.insert(order1)
     avl_tree.insert(order2)
