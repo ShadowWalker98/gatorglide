@@ -8,7 +8,7 @@ class Node:
             self.val = order.est_toa
         elif branching_attr == BRANCH_PRIORITY:
             self.val = order.priority
-        self.order_info = order
+        self.order_info = {order.order_id: order}
         self.left = None
         self.right = None
         self.parent = None
@@ -16,7 +16,6 @@ class Node:
         self.right_height = 0
         self.balance_factor = 0
         self.height = 0
-        self.order_ids_list = []
 
     def __str__(self):
         node_str = ("value: " + str(self.val) + " bf: " + str(self.balance_factor) +
@@ -56,3 +55,14 @@ class Node:
             degree += 1
         return degree
 
+    def add_order(self, order: Order):
+        self.order_info[order.order_id] = order
+
+    def remove_order(self, order: Order):
+        del self.order_info[order.order_id]
+
+    def order_exists(self, order: Order) -> bool:
+        return order.order_id in self.order_info.keys()
+
+    def order_exists_id(self, order_id: int) -> bool:
+        return order_id in self.order_info.keys()

@@ -94,9 +94,9 @@ if __name__ == "__main__":
     avl_tree.insert(order10)
     avl_tree.insert(order11)
     avl_tree.insert(order12)
-    avl_tree.delete_node(order10)
-    avl_tree.delete_node(order11)
-    avl_tree.delete_node(order12)
+    avl_tree.delete_node(order10, False)
+    avl_tree.delete_node(order11, False)
+    avl_tree.delete_node(order12, False)
     avl_tree.inorder()
 
 
