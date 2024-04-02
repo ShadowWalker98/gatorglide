@@ -1,6 +1,14 @@
+from internal.order.order import *
+
+
 class Node:
-    def __init__(self, val: int):
-        self.val = val
+    def __init__(self, order: Order, branching_attr: str):
+        self.type_tree = branching_attr
+        if branching_attr == BRANCH_EST_TOA:
+            self.val = order.est_toa
+        elif branching_attr == BRANCH_PRIORITY:
+            self.val = order.priority
+        self.order_info = order
         self.left = None
         self.right = None
         self.parent = None
@@ -8,9 +16,11 @@ class Node:
         self.right_height = 0
         self.balance_factor = 0
         self.height = 0
+        self.order_ids_list = []
 
     def __str__(self):
-        node_str = "value: " + str(self.val) + " bf: " + str(self.balance_factor) + " parent: "
+        node_str = ("value: " + str(self.val) + " bf: " + str(self.balance_factor) +
+                    " type: " + str(self.type_tree) + " parent: ")
         if self.parent is not None:
             node_str += str(self.parent.val)
         return node_str
