@@ -321,6 +321,14 @@ class AvlTree:
         else:
             return self.__search_helper(root.right, key, order_id)
 
+    def get_order_info(self, order_id: int) -> (Order, int):
+        if self.root == None:
+            return None, None
+        node = self.root
+        while node is not None:
+            if node.order_exists_id(order_id):
+                return node.order_info[order_id], node.val
+
     # helper method for finding the inorder successor for a node being deleted
     # returns the node to the calling function
     @staticmethod
