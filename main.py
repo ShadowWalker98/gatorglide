@@ -152,8 +152,10 @@ if __name__ == "__main__":
         sys.exit(1)
 
     input_filename = sys.argv[1]
+    arr = input_filename.split('.')
+    w = open(arr[0] + "_output.txt", "w")
 
-    driver = Driver()
+    driver = Driver(w)
 
     with open(input_filename, "r") as f:
         for line in f:

@@ -1,3 +1,4 @@
+import sys
 from collections import deque
 
 from internal.avlimpl.avltree import AvlTree
@@ -6,15 +7,16 @@ from internal.order.order import Order
 
 
 class Driver:
-    def __init__(self):
+    def __init__(self, w):
         self.priority_avl_tree = AvlTree(BRANCH_PRIORITY)
+        self.output_writer = w
 
     def print_order(self, order_id: int):
         # print information about the order with orderId = order_id
         # output format: [orderId, currentSystemTime, orderValue, deliveryTime, ETA]
         order_info = self.__get_order_info(order_id)
         if order_info is not None:
-            print(self.get_order_info_helper(order_info))
+            print(self.get_order_info_helper(order_info), file=self.output_writer, flush=True)
 
     def print_range(self, time1: int, time2: int):
         # prints order_ids of all the orders that will be delivered within the given times (including both times)
@@ -25,7 +27,7 @@ class Driver:
         order_list = self.eta_searcher(time1, time2)
         sorted_orders = sorted(order_list, key=lambda sorted_order: sorted_order.est_toa)
         if len(sorted_orders) == 0:
-            print("There are no orders in that time period")
+            print("There are no orders in that time period", file=self.output_writer, flush=True)
         else:
             ans_str = "["
             for i, order in enumerate(sorted_orders):
@@ -34,7 +36,7 @@ class Driver:
                 else:
                     ans_str += str(order.order_id) + ","
             ans_str += "]"
-            print(ans_str)
+            print(ans_str, file=self.output_writer, flush=True)
 
     def get_rank_of(self, order_id: int) -> int:
         # prints how many orders will be delivered before it in the following format:
@@ -43,7 +45,7 @@ class Driver:
         if order_info is None:
             return 0
         order_list = self.get_rank_order_helper(order_info.est_toa)
-        print("Order {} will be delivered after {} orders".format(order_id, len(order_list)))
+        print("Order {} will be delivered after {} orders".format(order_id, len(order_list)), file=self.output_writer, flush=True)
         return len(order_list)
 
     def create_order(self, order_id: int, current_sys_time: int, order_value: int, delivery_time: int):
@@ -62,7 +64,7 @@ class Driver:
             order = Order(order_id, current_sys_time, order_value, delivery_time)
             order.est_toa = current_sys_time + order.delivery_time
             self.priority_avl_tree.insert(order)
-            print(order.create_order_string())
+            print(order.create_order_string(), file=self.output_writer, flush=True)
         else:
             order = Order(order_id, current_sys_time, order_value, delivery_time)
             next_best_priority_order = self.__get_previous_order(order)
@@ -85,7 +87,7 @@ class Driver:
                                  + order.delivery_time)
 
             self.priority_avl_tree.insert(order)
-            print(order.create_order_string())
+            print(order.create_order_string(), file=self.output_writer, flush=True)
 
         for delivered_order in delivered_orders:
             self.priority_avl_tree.delete_node(delivered_order, False)
@@ -93,11 +95,11 @@ class Driver:
         updated_orders = self.__update_lower_priority_orders(order, drone_order_id)
         updated_orders = self.sort_list_eta(updated_orders)
         if len(updated_orders) > 0:
-            print(self.updated_orders_string(updated_orders))
+            print(self.updated_orders_string(updated_orders), file=self.output_writer, flush=True)
 
         delivered_orders = self.sort_list_eta(delivered_orders)
         for delivered_order in delivered_orders:
-            print(delivered_order.delivered_order_string())
+            print(delivered_order.delivered_order_string(), file=self.output_writer, flush=True)
 
     def cancel_order(self, order_id: int, current_sys_time: int):
         # cancels the order and updates the ETA of all the orders with lower priority
@@ -110,24 +112,24 @@ class Driver:
         delivered_orders = self.__get_delivered_orders(current_sys_time)
 
         if self.__order_has_been_delivered(order_id, current_sys_time):
-            print("Cannot cancel. " + self.__order_already_delivered_string(order_id))
+            print("Cannot cancel. " + self.__order_already_delivered_string(order_id), file=self.output_writer, flush=True)
         else:
             # when we cancel an order, a round trip is cancelled
             # whose value is 2 * order.delivery time
             order = self.__get_order_info(order_id)
             # deleting the order from the priority tree
             self.priority_avl_tree.delete_node(order, False)
-            print(self.__cancelled_order_string(order))
+            print(self.__cancelled_order_string(order), file=self.output_writer, flush=True)
             # updating the eta of the lower priority orders
             updated_orders = self.__cancel_order_helper(order)
             updated_orders = self.sort_list_eta(updated_orders)
             if len(updated_orders) > 0:
-                print(self.updated_orders_string(updated_orders))
+                print(self.updated_orders_string(updated_orders), file=self.output_writer, flush=True)
 
         delivered_orders = self.sort_list_eta(delivered_orders)
         for delivered_order in delivered_orders:
             self.priority_avl_tree.delete_node(delivered_order, False)
-            print(delivered_order.delivered_order_string())
+            print(delivered_order.delivered_order_string(), file=self.output_writer, flush=True)
 
     def update_time(self, order_id: int, current_sys_time: int, new_delivery_time: int):
         # takes the current system time, order_id and the new delivery time. It updates the ETAs of all the orders with
@@ -138,26 +140,27 @@ class Driver:
         # delivered
         delivered_orders = self.__get_delivered_orders(current_sys_time)
         if self.__order_has_been_delivered(order_id, current_sys_time):
-            print("Cannot update. " + self.__order_already_delivered_string(order_id))
+            print("Cannot update. " + self.__order_already_delivered_string(order_id), file=self.output_writer, flush=True)
         else:
             order = self.__get_order_info(order_id)
             old_delivery_time = order.delivery_time
             updated_orders = self.__update_time_helper(order, new_delivery_time, old_delivery_time, order.est_toa)
             updated_orders = self.sort_list_eta(updated_orders)
             if len(updated_orders) > 0:
-                print(self.updated_orders_string(updated_orders))
+                print(self.updated_orders_string(updated_orders), file=self.output_writer, flush=True)
         delivered_orders = self.sort_list_eta(delivered_orders)
         for delivered_order in delivered_orders:
             self.priority_avl_tree.delete_node(delivered_order, False)
-            print(delivered_order.delivered_order_string())
+            print(delivered_order.delivered_order_string(), file=self.output_writer, flush=True)
 
     def quit_gator_glide(self):
         # have to deliver the remaining orders
         remaining_orders = self.__quit_helper()
         remaining_orders = self.sort_list_eta(remaining_orders)
         for remaining_order in remaining_orders:
-            print(remaining_order.delivered_order_string())
-        # TODO: can clean up the program connections and io ops after this
+            print(remaining_order.delivered_order_string(), file=self.output_writer, flush=True)
+        self.output_writer.flush()
+        self.output_writer.close()
 
     def __quit_helper(self):
         node = self.priority_avl_tree.root
