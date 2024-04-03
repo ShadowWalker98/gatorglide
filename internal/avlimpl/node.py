@@ -1,6 +1,14 @@
+from internal.order.order import *
+
+
 class Node:
-    def __init__(self, val: int):
-        self.val = val
+    def __init__(self, order: Order, branching_attr: str):
+        self.type_tree = branching_attr
+        if branching_attr == BRANCH_EST_TOA:
+            self.val = order.est_toa
+        elif branching_attr == BRANCH_PRIORITY:
+            self.val = order.priority
+        self.order_info = {order.order_id: order}
         self.left = None
         self.right = None
         self.parent = None
@@ -10,7 +18,8 @@ class Node:
         self.height = 0
 
     def __str__(self):
-        node_str = "value: " + str(self.val) + " bf: " + str(self.balance_factor) + " parent: "
+        node_str = ("value: " + str(self.val) + " bf: " + str(self.balance_factor) +
+                    " type: " + str(self.type_tree) + " parent: ")
         if self.parent is not None:
             node_str += str(self.parent.val)
         return node_str
@@ -46,3 +55,14 @@ class Node:
             degree += 1
         return degree
 
+    def add_order(self, order: Order):
+        self.order_info[order.order_id] = order
+
+    def remove_order(self, order: Order):
+        del self.order_info[order.order_id]
+
+    def order_exists(self, order: Order) -> bool:
+        return order.order_id in self.order_info.keys()
+
+    def order_exists_id(self, order_id: int) -> bool:
+        return order_id in self.order_info.keys()

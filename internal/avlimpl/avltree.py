@@ -1,52 +1,80 @@
 from internal.avlimpl.node import Node
+from internal.constants import *
+from internal.order.order import Order
 
 
 class AvlTree:
 
-    def __init__(self):
+    def __init__(self, type_tree: str):
+        if type_tree == BRANCH_PRIORITY:
+            self.type_tree = BRANCH_PRIORITY
+        elif type_tree == BRANCH_EST_TOA:
+            self.type_tree = BRANCH_EST_TOA
         self.root = None
         self.size = 0
 
-    def insert(self, value_to_insert):
+    def insert(self, value_to_insert: Order):
         if self.root is None:
-            self.root = Node(value_to_insert)
+            self.root = Node(value_to_insert, self.type_tree)
             return
-        self.__insert_helper(self.root, value_to_insert)
+        # if there is a node already with the same priority, we just need to add order id : order in order_info dic
+        # we don't need to create a new node
+        if self.type_tree == BRANCH_PRIORITY:
+            node_if_present = self.insert_search_key(self.root, value_to_insert)
+            if node_if_present is not None:
+                # add order info to the hashmap
+                node_if_present.add_order(value_to_insert)
+                return
+        # we proceed as normal otherwise
+        node_to_insert = Node(value_to_insert, self.type_tree)
+        self.__insert_helper(self.root, node_to_insert)
 
-    def __insert_helper(self, root: Node, value_to_insert: int):
+    def insert_search_key(self, root: Node, value_to_insert: Order):
+        if root is None:
+            return
+        else:
+            if root.val == value_to_insert.priority:
+                # add it to the order info map
+                return root
+            elif root.val < value_to_insert.priority:
+                self.insert_search_key(root.right, value_to_insert)
+            else:
+                self.insert_search_key(root.left, value_to_insert)
+
+    def __insert_helper(self, root: Node, node_to_insert: Node):
         if root is None:
             return
         else:
             # if the root is not None, we check whether the value to be inserted is less than the current
             # value at the root
-            if root.val > value_to_insert:
+            if root.val > node_to_insert.val:
                 if root.left is None:
                     # if the left subtree is empty then we can just add it to the left
-                    root.left = Node(value_to_insert)
+                    root.left = node_to_insert
                     root.left.parent = root
                 else:
                     # insert it into the left subtree
-                    self.__insert_helper(root.left, value_to_insert)
+                    self.__insert_helper(root.left, node_to_insert)
 
                 root.left_height = root.left.height + 1
                 root.height = max(root.left_height, root.right_height)
-                bf = root.compute_balance_factor()
+                root.compute_balance_factor()
                 if self.is_imbalanced(root):
                     # balance the tree
                     self.__balance(root)
 
-            elif root.val < value_to_insert:
+            elif root.val < node_to_insert.val:
                 if root.right is None:
                     # if the right subtree is empty then we can just add it to the right subtree
-                    root.right = Node(value_to_insert)
+                    root.right = node_to_insert
                     root.right.parent = root
                 else:
                     # insert it into the right subtree
-                    self.__insert_helper(root.right, value_to_insert)
+                    self.__insert_helper(root.right, node_to_insert)
 
                 root.right_height = root.right.height + 1
                 root.height = max(root.left_height, root.right_height)
-                bf = root.compute_balance_factor()
+                root.compute_balance_factor()
                 if self.is_imbalanced(root):
                     # balance the tree
                     self.__balance(root)
@@ -153,8 +181,12 @@ class AvlTree:
 
     # delete node from avl tree
     # at this point just checks if the values match and deletes the node from the tree
-    def delete_node(self, value_to_be_deleted: int) -> bool:
-        print("Have to delete node with value: " + str(value_to_be_deleted))
+    def delete_node(self, value_to_be_deleted: Order, inorder_flag: bool) -> bool:
+        # if the tree is based on priorities we first check if the order_priority is present in the tree
+        # if it is then we check if the order_id list becomes empty after deleting the specific order_id provided
+        # if the tree is based on eta, then there are no duplicates
+        # we just proceed like normal as we do in a normal avl tree
+
         # we check if tree has any nodes
         if self.root is None:
             return False
@@ -167,7 +199,18 @@ class AvlTree:
         # call the helper function
         degree = node_to_delete.get_degree()
         parent = None
+        # only the priority type tree can have duplicates.
+        # if we do find that a particular priority value is present twice then we can just delete the order id
+        # from the order info dictionary and return, as we don't have to remove the priority value itself.
+        # if the order_info dic is empty after deletion of the order id then we have to remove this node from the tree
+        # this means we have to either delete a leaf, a degree one node or a degree two node. So we proceed as how we
+        # would in a normal AVL tree deletion.
+        if self.type_tree == BRANCH_PRIORITY and not inorder_flag:
+            node_to_delete.remove_order(value_to_be_deleted)
+            if len(node_to_delete.order_info) > 0:
+                return True
         if degree == 0:
+            # deleting the leaf
             parent = self.__delete_leaf(node_to_delete)
 
         elif degree == 1:
@@ -178,11 +221,22 @@ class AvlTree:
             # find the inorder successor then replace the node with it
             # then the node which is physically deleted is the inorder successor
             # and is always a degree one or degree zero node
+
             inorder_successor = self.__find_inorder_successor(node_to_delete)
             # swap the values and then physically delete the node at the inorder_successor
-            temp = inorder_successor.val
-            self.delete_node(temp)
-            node_to_delete.val = temp
+            temp_val = inorder_successor.val
+            temp_order_info = inorder_successor.order_info
+            # update this to make the node have a hashmap of order_ids: order_info - DONE
+            # TODO: test the following implementation and think over it a little
+            # when we are replacing the node to be deleted with its inorder successor then we want to copy the entire
+            # order info dic. We therefore maintain a flag in the parameters which when true means we don't check for
+            # duplicates and just delete the node
+            # deleting the node having an order id which is present in order_info of the inorder_successor
+            # and since inorder flag is true we delete it directly.
+            self.delete_node(inorder_successor.order_info[next(iter(inorder_successor.order_info))], True)
+            # copy the values of the inorder successor's values into the node which was "deleted"
+            node_to_delete.val = temp_val
+            node_to_delete.order_info = temp_order_info
         # balancing the resulting tree after node deletion
         if parent is not None:
             while parent is not None:
@@ -222,6 +276,7 @@ class AvlTree:
 
     # returns parent of the deleted node
     def __delete_leaf(self, root: Node) -> Node | None:
+
         if root.parent is None:
             self.root = None
             return root.parent
@@ -259,18 +314,24 @@ class AvlTree:
         node.parent = None
         return node_parent
 
-    def search_key(self, key: int) -> Node | None:
-        return self.__search_helper(self.root, key)
+    def search_key(self, key: Order) -> Node | None:
+        # check if this particular priority is present in the tree if the tree type is BRANCH_PRIORITY
+        # check if this particular eta is present in the tree if the tree type is BRANCH_EST_TOA
+        if self.type_tree == BRANCH_PRIORITY:
+            return self.__search_helper(self.root, key.priority, key.order_id)
+        if self.type_tree == BRANCH_EST_TOA:
+            return self.__search_helper(self.root, key.est_toa, key.order_id)
 
-    def __search_helper(self, root: Node, key: int) -> Node | None:
+    def __search_helper(self, root: Node, key: int, order_id: int) -> Node | None:
         if root is None:
             return root
-        if root.val == key:
+        if ((root.val == key and self.type_tree == BRANCH_EST_TOA)
+                or (root.val == key and self.type_tree == BRANCH_PRIORITY and root.order_exists_id(order_id))):
             return root
         elif root.val > key:
-            return self.__search_helper(root.left, key)
+            return self.__search_helper(root.left, key, order_id)
         else:
-            return self.__search_helper(root.right, key)
+            return self.__search_helper(root.right, key, order_id)
 
     # helper method for finding the inorder successor for a node being deleted
     # returns the node to the calling function
@@ -284,15 +345,3 @@ class AvlTree:
     @staticmethod
     def is_imbalanced(root: Node) -> bool:
         return root.balance_factor < -1 or root.balance_factor > 1
-
-    @staticmethod
-    def degree(root: Node) -> int:
-        if root is None:
-            return 0
-        if root.left is None and root.right is None:
-            return 0
-        if (root.left is None and root.right is not None) or (root.left is not None and root.right is None):
-            return 1
-        else:
-            return 2
-
