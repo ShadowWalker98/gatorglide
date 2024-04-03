@@ -20,14 +20,26 @@ class AvlTree:
         # if there is a node already with the same priority, we just need to add order id : order in order_info dic
         # we don't need to create a new node
         if self.type_tree == BRANCH_PRIORITY:
-            node_if_present = self.search_key(value_to_insert)
+            node_if_present = self.insert_search_key(self.root, value_to_insert)
             if node_if_present is not None:
                 # add order info to the hashmap
                 node_if_present.add_order(value_to_insert)
-            return
+                return
         # we proceed as normal otherwise
         node_to_insert = Node(value_to_insert, self.type_tree)
         self.__insert_helper(self.root, node_to_insert)
+
+    def insert_search_key(self, root: Node, value_to_insert: Order):
+        if root is None:
+            return
+        else:
+            if root.val == value_to_insert.priority:
+                # add it to the order info map
+                return root
+            elif root.val < value_to_insert.priority:
+                self.insert_search_key(root.right, value_to_insert)
+            else:
+                self.insert_search_key(root.left, value_to_insert)
 
     def __insert_helper(self, root: Node, node_to_insert: Node):
         if root is None:
@@ -320,14 +332,6 @@ class AvlTree:
             return self.__search_helper(root.left, key, order_id)
         else:
             return self.__search_helper(root.right, key, order_id)
-
-    def get_order_info(self, order_id: int) -> (Order, int):
-        if self.root == None:
-            return None, None
-        node = self.root
-        while node is not None:
-            if node.order_exists_id(order_id):
-                return node.order_info[order_id], node.val
 
     # helper method for finding the inorder successor for a node being deleted
     # returns the node to the calling function
