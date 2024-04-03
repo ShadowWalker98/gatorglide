@@ -43,10 +43,7 @@ class Driver:
         if order_info is None:
             return 0
         order_list = self.get_rank_order_helper(order_info.est_toa)
-        if len(order_list) > 1:
-            print("Order {} will be delivered after {} orders".format(order_id, len(order_list)))
-        else:
-            print("Order {} will be delivered after {} order".format(order_id, len(order_list)))
+        print("Order {} will be delivered after {} orders".format(order_id, len(order_list)))
         return len(order_list)
 
     def create_order(self, order_id: int, current_sys_time: int, order_value: int, delivery_time: int):
@@ -60,8 +57,6 @@ class Driver:
         # nodes which have eta <= current system time and delete these nodes
         drone_order_id = None
         delivered_orders = self.__get_delivered_orders(current_sys_time)
-        for delivered_order in delivered_orders:
-            self.priority_avl_tree.delete_node(delivered_order, False)
         # we then find the order which is supposed to be delivered before the one which was created now
         if self.priority_avl_tree.root is None:
             order = Order(order_id, current_sys_time, order_value, delivery_time)
@@ -88,11 +83,15 @@ class Driver:
                 # we schedule it after the inorder predecessor order is completed
                 order.est_toa = (next_best_priority_order.est_toa + next_best_priority_order.delivery_time
                                  + order.delivery_time)
+
             self.priority_avl_tree.insert(order)
             print(order.create_order_string())
 
+        for delivered_order in delivered_orders:
+            self.priority_avl_tree.delete_node(delivered_order, False)
         # we now have to update the lower priority orders
         updated_orders = self.__update_lower_priority_orders(order, drone_order_id)
+        updated_orders = self.sort_list_eta(updated_orders)
         if len(updated_orders) > 0:
             print(self.updated_orders_string(updated_orders))
 
@@ -108,9 +107,10 @@ class Driver:
         # or
         # Cannot cancel. Order {orderId} has already been delivered
         # if the order is out for delivery or is already delivered
+        delivered_orders = self.__get_delivered_orders(current_sys_time)
 
         if self.__order_has_been_delivered(order_id, current_sys_time):
-            print(self.__order_already_delivered_string(order_id))
+            print("Cannot cancel. " + self.__order_already_delivered_string(order_id))
         else:
             # when we cancel an order, a round trip is cancelled
             # whose value is 2 * order.delivery time
@@ -120,8 +120,14 @@ class Driver:
             print(self.__cancelled_order_string(order))
             # updating the eta of the lower priority orders
             updated_orders = self.__cancel_order_helper(order)
-            sorted_list = self.sort_list_eta(updated_orders)
-            print(self.updated_orders_string(sorted_list))
+            updated_orders = self.sort_list_eta(updated_orders)
+            if len(updated_orders) > 0:
+                print(self.updated_orders_string(updated_orders))
+
+        delivered_orders = self.sort_list_eta(delivered_orders)
+        for delivered_order in delivered_orders:
+            self.priority_avl_tree.delete_node(delivered_order, False)
+            print(delivered_order.delivered_order_string())
 
     def update_time(self, order_id: int, current_sys_time: int, new_delivery_time: int):
         # takes the current system time, order_id and the new delivery time. It updates the ETAs of all the orders with
@@ -130,14 +136,20 @@ class Driver:
         # or
         # Cannot update. Order {orderId} has already been delivered if the order is out for delivery or is already
         # delivered
+        delivered_orders = self.__get_delivered_orders(current_sys_time)
         if self.__order_has_been_delivered(order_id, current_sys_time):
-            print(self.__order_already_delivered_string(order_id))
+            print("Cannot update. " + self.__order_already_delivered_string(order_id))
         else:
             order = self.__get_order_info(order_id)
             old_delivery_time = order.delivery_time
             updated_orders = self.__update_time_helper(order, new_delivery_time, old_delivery_time, order.est_toa)
-            sorted_list = self.sort_list_eta(updated_orders)
-            print(self.updated_orders_string(sorted_list))
+            updated_orders = self.sort_list_eta(updated_orders)
+            if len(updated_orders) > 0:
+                print(self.updated_orders_string(updated_orders))
+        delivered_orders = self.sort_list_eta(delivered_orders)
+        for delivered_order in delivered_orders:
+            self.priority_avl_tree.delete_node(delivered_order, False)
+            print(delivered_order.delivered_order_string())
 
     def quit_gator_glide(self):
         # have to deliver the remaining orders
@@ -200,11 +212,11 @@ class Driver:
 
     @staticmethod
     def __order_already_delivered_string(order_id: int):
-        return "Order " + str(order_id) + " has been already been delivered"
+        return "Order " + str(order_id) + " has already been delivered"
 
     @staticmethod
     def __cancelled_order_string(order: Order) -> str:
-        return "Order " + str(order.order_id) + " has been cancelled"
+        return "Order " + str(order.order_id) + " has been canceled"
 
     @staticmethod
     def get_order_info_helper(order_details: Order) -> str:
@@ -276,7 +288,7 @@ class Driver:
         while len(queue) > 0:
             node = queue.popleft()
             for key in node.order_info.keys():
-                if node.order_info[key].est_toa < current_sys_time:
+                if node.order_info[key].est_toa <= current_sys_time:
                     delivered_orders.append(node.order_info[key])
             if node.left is not None:
                 queue.append(node.left)
@@ -299,12 +311,11 @@ class Driver:
                     order = popped_node.order_info[key]
                     if previous_order is None:
                         previous_order = order
-                    elif (previous_order is not None and previous_order.est_toa < order.est_toa
-                          and order.priority <= previous_order.priority):
+                    elif previous_order is not None and previous_order.est_toa < order.est_toa:
                         previous_order = order
-            if popped_node.left is not None and popped_node.left.val >= check_order.priority:
+            if popped_node.left is not None:
                 queue.append(popped_node.left)
-            if popped_node.right is not None and popped_node.right.val >= check_order.priority:
+            if popped_node.right is not None:
                 queue.append(popped_node.right)
 
         return previous_order
@@ -349,9 +360,9 @@ class Driver:
                         order = node.order_info[key]
                         order.est_toa += (2 * created_order.delivery_time)
                         updated_orders.append(order)
-            if node.left is not None and node.left.val < created_order.priority:
+            if node.left is not None:
                 queue.append(node.left)
-            if node.right is not None and node.right.val < created_order.priority:
+            if node.right is not None:
                 queue.append(node.right)
         return updated_orders
 
@@ -362,7 +373,7 @@ class Driver:
             if i == len(updated_orders) - 1:
                 updated_str += (str(updated_order.order_id) + ":" + str(updated_order.est_toa))
             else:
-                updated_str += (str(updated_order.order_id) + ":" + str(updated_order.est_toa) + ", ")
+                updated_str += (str(updated_order.order_id) + ":" + str(updated_order.est_toa) + ",")
         updated_str += "]"
         return updated_str
 

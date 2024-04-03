@@ -9,7 +9,7 @@ def run_test_case_one():
     driver.create_order(1004, 13, 100, 5)
     driver.print_range(2, 15)
     driver.update_time(1003, 15, 1)
-    driver.create_order(1005, 30, 300, 4)
+    driver.create_order(1005, 30, 300, 3)
     driver.quit_gator_glide()
 
 
@@ -106,7 +106,14 @@ def run_test_case_five():
     driver.print_range(60, 90)
     driver.quit_gator_glide()
 
+
 if __name__ == "__main__":
-    # check test case four output
-    # run_test_case_four()
-    run_test_case_five()
+    print("Gator Glide delivery services")
+
+    # run test cases by calling the corresponding function above
+    # test 1 - o - passes
+    # test 2 - o - passes
+    # test 3 - o - passes
+    # test 4 - o - passes
+    # test 5 - o - passes
+

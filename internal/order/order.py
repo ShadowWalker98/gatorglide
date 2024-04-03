@@ -21,6 +21,6 @@ class Order:
         return "Order " + str(self.order_id) + " has been delivered at time " + str(self.est_toa)
 
     def out_for_delivery(self, current_sys_time: int) -> bool:
-        if self.est_toa - self.delivery_time < current_sys_time:
+        if self.est_toa - self.delivery_time <= current_sys_time:
             return True
         return False
