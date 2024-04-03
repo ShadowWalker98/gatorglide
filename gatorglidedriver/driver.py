@@ -157,7 +157,7 @@ class Driver:
         remaining_orders = self.sort_list_eta(remaining_orders)
         for remaining_order in remaining_orders:
             print(remaining_order.delivered_order_string())
-        # can clean up the program connections and io ops after this
+        # TODO: can clean up the program connections and io ops after this
 
     def __quit_helper(self):
         node = self.priority_avl_tree.root

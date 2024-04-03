@@ -1,4 +1,34 @@
 from gatorglidedriver.driver import Driver
+import sys
+from internal.constants import *
+
+
+def print_order(driver: Driver, order_id: int):
+    driver.print_order(order_id)
+
+
+def print_range(driver: Driver, time1: int, time2: int):
+    driver.print_range(time1, time2)
+
+
+def get_rank_of(driver: Driver, order_id: int):
+    driver.get_rank_of(order_id)
+
+
+def create_order(driver: Driver, order_id: int, current_sys_time: int, order_value: int, delivery_time: int):
+    driver.create_order(order_id, current_sys_time, order_value, delivery_time)
+
+
+def cancel_order(driver: Driver, order_id: int, current_sys_time: int):
+    driver.cancel_order(order_id, current_sys_time)
+
+
+def update_time(driver: Driver, order_id: int, current_sys_time: int, new_delivery_time: int):
+    driver.update_time(order_id, current_sys_time, new_delivery_time)
+
+
+def quit_gator_glide(driver: Driver):
+    driver.quit_gator_glide()
 
 
 def run_test_case_one():
@@ -107,8 +137,51 @@ def run_test_case_five():
     driver.quit_gator_glide()
 
 
+def init_command_map():
+    command_dic = {CREATE_ORDER: create_order, UPDATE_TIME: update_time, GET_RANK: get_rank_of,
+                   CANCEL_ORDER: cancel_order, QUIT: quit_gator_glide}
+    return command_dic
+
+
 if __name__ == "__main__":
-    print("Gator Glide delivery services")
+
+    command_map = init_command_map()
+
+    if len(sys.argv) != 2:
+        print("Usage: python script.py input_filename")
+        sys.exit(1)
+
+    input_filename = sys.argv[1]
+
+    driver = Driver()
+
+    with open(input_filename, "r") as f:
+        for line in f:
+            stripped_line = line.strip()
+            left_idx = stripped_line.find('(')
+            right_idx = stripped_line.find(')')
+            args_string = stripped_line[left_idx + 1:right_idx]
+            args_list = args_string.split(',')
+            args_int_list = [0 for i in args_list]
+
+            for i in range(len(args_list)):
+                stripped_arg = args_list[i].strip()
+                args_int_list[i] = int(stripped_arg) if stripped_arg != '' else None
+
+            command = stripped_line[: left_idx]
+            # print(command)
+            # print(args_int_list)
+
+            if command == PRINT_ORDER:
+                if len(args_int_list) == 2:
+                    print_range(driver, *args_int_list)
+                elif len(args_int_list) == 1:
+                    print_order(driver, *args_int_list)
+            elif command in command_map.keys():
+                if command == QUIT:
+                    quit_gator_glide(driver)
+                else:
+                    command_map[command](driver, *args_int_list)
 
     # run test cases by calling the corresponding function above
     # test 1 - o - passes
@@ -116,4 +189,3 @@ if __name__ == "__main__":
     # test 3 - o - passes
     # test 4 - o - passes
     # test 5 - o - passes
-

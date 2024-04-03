@@ -227,7 +227,6 @@ class AvlTree:
             temp_val = inorder_successor.val
             temp_order_info = inorder_successor.order_info
             # update this to make the node have a hashmap of order_ids: order_info - DONE
-            # TODO: test the following implementation and think over it a little
             # when we are replacing the node to be deleted with its inorder successor then we want to copy the entire
             # order info dic. We therefore maintain a flag in the parameters which when true means we don't check for
             # duplicates and just delete the node
